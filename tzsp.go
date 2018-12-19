@@ -1,6 +1,7 @@
 package tzsp
 
 import (
+	"bytes"
 	"encoding/binary"
 )
 
@@ -87,5 +88,46 @@ func DecodeBytes(data []byte) (packet Packet, err error) {
 		return
 	}
 
+	return
+}
+
+// EncodeBytes function encode packet to bytes
+func (packet *Packet) EncodeBytes() (data []byte, err error) {
+	buf := &bytes.Buffer{}
+
+	// encode header
+	if err = buf.WriteByte(packet.Header.Version); err != nil {
+		return
+	}
+	if err = buf.WriteByte(packet.Header.Type); err != nil {
+		return
+	}
+
+	var encProtocol []byte
+	binary.BigEndian.PutUint16(encProtocol, packet.Header.EncapsulatedProtocol)
+	if _, err = buf.Write(encProtocol); err != nil {
+		return
+	}
+
+	// encode fields
+	var lastFieldPresent bool
+	for _, field := range packet.TaggedFields {
+		if field.TagType == TaggedFieldTypeEnd {
+			lastFieldPresent = true
+		}
+		d, err := field.Encode()
+		if err != nil {
+			return nil, err
+		}
+		if _, err = buf.Write(d); err != nil {
+			return nil, err
+		}
+	}
+	if !lastFieldPresent {
+		if err = buf.WriteByte(TaggedFieldTypeEnd); err != nil {
+			return
+		}
+	}
+	data = buf.Bytes()
 	return
 }

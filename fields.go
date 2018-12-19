@@ -1,5 +1,7 @@
 package tzsp
 
+import "bytes"
+
 // Field types
 const (
 	TaggedFieldTypePadding            byte = 0x00
@@ -72,6 +74,25 @@ func decodeFields(data []byte) (fields []TaggedField, pack []byte, err error) {
 			err = ErrUnknownFieldType
 			return
 		}
+	}
+	return
+}
+
+// Encode function encode given field
+func (field *TaggedField) Encode() (data []byte, err error) {
+	buf := &bytes.Buffer{}
+
+	switch field.TagType {
+	case TaggedFieldTypePadding, TaggedFieldTypeEnd:
+		err = buf.WriteByte(field.TagType)
+	default:
+		var d []byte
+		d = append(d, field.TagType, field.TagLength)
+		d = append(d, field.Data...)
+		_, err = buf.Write(d)
+	}
+	if err == nil {
+		data = buf.Bytes()
 	}
 	return
 }
