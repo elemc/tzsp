@@ -1,10 +1,10 @@
 package main
 
 import (
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"net"
-	"strings"
 
 	"github.com/elemc/tzsp"
 	"github.com/sirupsen/logrus"
@@ -22,6 +22,7 @@ func init() {
 
 func main() {
 	flag.Parse()
+	logrus.SetLevel(logrus.DebugLevel)
 
 	conn, err := net.ListenPacket(network, addr)
 	if err != nil {
@@ -35,10 +36,12 @@ func main() {
 		if err != nil {
 			logrus.Error(err)
 			continue
+		} else if n == 0 {
+			break
 		}
 		buf = buf[:n]
-		logrus.Debugf("Got packet: %s", string(buf))
 		go decode(addr, buf)
+		//break
 	}
 }
 
@@ -52,10 +55,23 @@ func decode(addr net.Addr, data []byte) {
 	ll := logrus.WithField("addr", addr.String()).
 		WithField("type", packet.Header.Type).
 		WithField("protocol", packet.Header.EncapsulatedProtocol)
-	var msgs []string
 	for _, field := range packet.TaggedFields {
-		msgs = append(msgs, fmt.Sprintf("%d - %d: [%s]", field.TagType, field.TagLength, string(field.Data)))
+		switch field.TagType {
+		case tzsp.TaggedFieldTypeRawRSSI:
+			ll = ll.WithField("signal", int(field.Data[0])-256)
+		case tzsp.TaggedFieldTypeDataRate:
+			ll = ll.WithField("rate", tzsp.DataRate(field.Data[0]).String())
+		case tzsp.TaggedFieldTypeFCSError:
+			ll = ll.WithField("FCS", field.Data[0] == 0)
+		case tzsp.TaggedFieldTypeRxChannel:
+			ll = ll.WithField("channel", field.Data[0])
+		case tzsp.TaggedFieldTypeRxFrameLength:
+			ll = ll.WithField("length", binary.BigEndian.Uint16(field.Data))
+		case tzsp.TaggedFieldTypeEnd:
+			continue
+		default:
+			ll = ll.WithField(fmt.Sprintf("%02x", field.TagType), field.Data)
+		}
 	}
-	msgs = append(msgs, "Data: %s", string(packet.Data))
-	ll.Info(strings.Join(msgs, "\n"))
+	ll.Infof("Data: %d", packet.Data)
 }

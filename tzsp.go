@@ -41,7 +41,6 @@ type Packet struct {
 }
 
 func decodeHeader(data []byte) (header Header, err error) {
-
 	if header.Version = data[0]; header.Version != Version {
 		err = ErrUnknownHeaderVersion
 		return
@@ -58,7 +57,7 @@ func decodeHeader(data []byte) (header Header, err error) {
 		err = ErrUnknownHeaderType
 		return
 	}
-	header.EncapsulatedProtocol = binary.BigEndian.Uint16(data[2:3])
+	header.EncapsulatedProtocol = binary.BigEndian.Uint16(data[2:4])
 	switch header.EncapsulatedProtocol {
 	case EncapsulatedProtocolEthernet,
 		EncapsulatedProtocolIEEE802_11,
@@ -84,7 +83,7 @@ func DecodeBytes(data []byte) (packet Packet, err error) {
 	if packet.Header, err = decodeHeader(data[:5]); err != nil {
 		return
 	}
-	if packet.TaggedFields, packet.Data, err = decodeFields(data[5:]); err != nil {
+	if packet.TaggedFields, packet.Data, err = decodeFields(data[4:]); err != nil {
 		return
 	}
 

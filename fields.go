@@ -1,6 +1,8 @@
 package tzsp
 
-import "bytes"
+import (
+	"bytes"
+)
 
 // Field types
 const (
@@ -28,7 +30,7 @@ type TaggedField struct {
 
 func (field *TaggedField) read(data []byte) (pack []byte) {
 	field.TagLength = data[1]
-	field.Data = data[2 : field.TagLength+1]
+	field.Data = data[2 : field.TagLength+2]
 	pack = data[field.TagLength+2:]
 	return
 }
@@ -38,7 +40,7 @@ func decodeFields(data []byte) (fields []TaggedField, pack []byte, err error) {
 		err = ErrDataIsTooShort
 		return
 	}
-	var buf []byte
+	buf := make([]byte, len(data))
 	copy(buf, data)
 	for {
 		if len(buf) == 0 {
