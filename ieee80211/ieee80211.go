@@ -106,6 +106,12 @@ type FrameControl struct {
 	Reserved        bool
 }
 
+// FrameBody is a struct for frame body parameters
+type FrameBody struct {
+	RawBytes  []byte
+	Timestamp uint64
+}
+
 // Frame is a struct of 802.11 frame
 type Frame struct {
 	rawFrameControl uint16
@@ -115,38 +121,44 @@ type Frame struct {
 	Addr3           net.HardwareAddr
 	SequenceControl uint16
 	Addr4           net.HardwareAddr
-	FrameBody       []byte
+	FrameBody       FrameBody
 	FCS             uint32
 	FrameControl    FrameControl
 }
 
 // Decode - function decode bytes as frame struct
 func Decode(data []byte) (frame Frame, err error) {
-	if len(data) < 24 {
+	if len(data) < 10 {
 		err = fmt.Errorf("data is too short (%d), expected 24", len(data))
 		return
 	}
 
 	//method := binary.LittleEndian
-	method := binary.BigEndian
+	method := binary.LittleEndian
 
 	frame.rawFrameControl = method.Uint16(data[0:2])
 	frame.decodeFrameControl()
 
 	frame.DCID = method.Uint16(data[2:4])
 	frame.Addr1 = net.HardwareAddr(data[4:10])
-	frame.Addr2 = net.HardwareAddr(data[10:16])
-	frame.Addr3 = net.HardwareAddr(data[16:22])
-	frame.SequenceControl = method.Uint16(data[22:24])
 
-	if len(data) >= 30 {
-		frame.Addr4 = net.HardwareAddr(data[24:30])
+	if len(data) >= 16 {
+		frame.Addr2 = net.HardwareAddr(data[10:16])
+	}
+	if len(data) >= 24 {
+		frame.Addr3 = net.HardwareAddr(data[16:22])
+		frame.SequenceControl = method.Uint16(data[22:24]) >> 4
 	}
 
-	if len(data) > 30 {
-		frame.FrameBody = data[30 : len(data)-4]
+	if len(data) >= 30 && frame.FrameControl.Type == FrameTypeData {
+		frame.Addr4 = net.HardwareAddr(data[24:30])
+		frame.FrameBody.RawBytes = data[30 : len(data)-4]
+		frame.FCS = method.Uint32(data[len(data)-4:])
+	} else if len(data) >= 28 {
+		frame.FrameBody.RawBytes = data[24 : len(data)-4]
 		frame.FCS = method.Uint32(data[len(data)-4:])
 	}
+	frame.decodeFrameBody()
 
 	return
 }
@@ -172,25 +184,25 @@ func (frame *Frame) decodeFrameControl() {
 		frame.FrameControl.Subtype = value
 	}
 
-	if (frame.rawFrameControl>>9)&0x01 == 1 {
-		frame.FrameControl.ToDS = true
+	frame.FrameControl.ToDS = (frame.rawFrameControl>>9)&0x01 == 1
+	frame.FrameControl.FromDS = (frame.rawFrameControl>>10)&0x01 == 1
+	frame.FrameControl.MoreFlag = (frame.rawFrameControl>>11)&0x01 == 1
+	frame.FrameControl.Retry = (frame.rawFrameControl>>12)&0x01 == 1
+	frame.FrameControl.PowerManagement = (frame.rawFrameControl>>13)&0x01 == 1
+	frame.FrameControl.MoreData = (frame.rawFrameControl>>14)&0x01 == 1
+	frame.FrameControl.WEP = (frame.rawFrameControl>>15)&0x01 == 1
+}
+
+func (frame *Frame) decodeFrameBody() {
+	if len(frame.FrameBody.RawBytes) == 0 {
+		return // nothing to do
 	}
-	if (frame.rawFrameControl>>10)&0x01 == 1 {
-		frame.FrameControl.FromDS = true
+
+	switch frame.FrameControl.Subtype {
+	case FrameSubTypeBeacon:
+		if len(frame.FrameBody.RawBytes) >= 8 {
+			frame.FrameBody.Timestamp = binary.LittleEndian.Uint64(frame.FrameBody.RawBytes[:8])
+		}
 	}
-	if (frame.rawFrameControl>>11)&0x01 == 1 {
-		frame.FrameControl.MoreFlag = true
-	}
-	if (frame.rawFrameControl>>12)&0x01 == 1 {
-		frame.FrameControl.Retry = true
-	}
-	if (frame.rawFrameControl>>13)&0x01 == 1 {
-		frame.FrameControl.PowerManagement = true
-	}
-	if (frame.rawFrameControl>>14)&0x01 == 1 {
-		frame.FrameControl.MoreData = true
-	}
-	if (frame.rawFrameControl>>15)&0x01 == 1 {
-		frame.FrameControl.WEP = true
-	}
+
 }

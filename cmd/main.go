@@ -70,8 +70,10 @@ func decode(addr net.Addr, data []byte) {
 			ll = ll.WithField("length", binary.BigEndian.Uint16(field.Data))
 		case tzsp.TaggedFieldTypeEnd:
 			continue
+		case tzsp.TaggedFieldTypeWLANRadioHDRSerial:
+			ll = ll.WithField("sensor-mac", net.HardwareAddr(field.Data).String())
 		default:
-			ll = ll.WithField(fmt.Sprintf("%02x", field.TagType), field.Data)
+			ll = ll.WithField(fmt.Sprintf("0x%02x", field.TagType), field.Data)
 		}
 	}
 	if packet.Data != nil && len(packet.Data) > 0 {
@@ -91,6 +93,12 @@ func decode(addr net.Addr, data []byte) {
 				WithField("from_ds", frame.FrameControl.FromDS)
 		if len(frame.Addr4) > 0 {
 			ll = ll.WithField("addr4", frame.Addr4.String())
+		}
+		if len(frame.FrameBody.RawBytes) > 0 {
+			//ll = ll.WithField("frame-data", string(frame.FrameBody))
+			ll = ll.WithField("time", fmt.Sprintf("%02x", frame.FrameBody.Timestamp))
+			ll.Warnf("%02x", frame.FrameBody.RawBytes)
+			return
 		}
 	}
 	ll.Info("data")
