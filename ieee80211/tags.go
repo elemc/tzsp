@@ -21,13 +21,17 @@ func decodeTags(data []byte) (tags Tags) {
 			break
 		}
 
+		tagLength := int(buf[1])
+		if len(buf) < tagLength+2 {
+			return
+		}
 		tag := Tag{
 			Type:   buf[0],
 			Length: buf[1],
-			Data:   buf[2 : buf[1]+2],
+			Data:   buf[2 : tagLength+2],
 		}
 		tags = append(tags, tag)
-		buf = buf[tag.Length+2:]
+		buf = buf[tagLength+2:]
 	}
 
 	return
