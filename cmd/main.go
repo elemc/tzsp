@@ -96,7 +96,10 @@ func decode(addr net.Addr, data []byte) {
 		}
 		if len(frame.FrameBody.RawBytes) > 0 {
 			//ll = ll.WithField("frame-data", string(frame.FrameBody))
-			ll = ll.WithField("time", fmt.Sprintf("%02x", frame.FrameBody.Timestamp))
+			ll = ll.
+				WithField("timestamp", fmt.Sprintf("%02x", frame.FrameBody.Timestamp)).
+				WithField("SSID", frame.FrameBody.Tags.SSID())
+
 			ll.Warnf("%02x", frame.FrameBody.RawBytes)
 			return
 		}

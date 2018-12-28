@@ -108,8 +108,11 @@ type FrameControl struct {
 
 // FrameBody is a struct for frame body parameters
 type FrameBody struct {
-	RawBytes  []byte
-	Timestamp uint64
+	RawBytes                []byte
+	Timestamp               uint64
+	BeaconInterval          uint16
+	CapabilitiesInformation uint16
+	Tags                    Tags
 }
 
 // Frame is a struct of 802.11 frame
@@ -152,11 +155,11 @@ func Decode(data []byte) (frame Frame, err error) {
 
 	if len(data) >= 30 && frame.FrameControl.Type == FrameTypeData {
 		frame.Addr4 = net.HardwareAddr(data[24:30])
-		frame.FrameBody.RawBytes = data[30 : len(data)-4]
-		frame.FCS = method.Uint32(data[len(data)-4:])
+		frame.FrameBody.RawBytes = data[30:]
+		//frame.FCS = method.Uint32(data[len(data)-4:])
 	} else if len(data) >= 28 {
-		frame.FrameBody.RawBytes = data[24 : len(data)-4]
-		frame.FCS = method.Uint32(data[len(data)-4:])
+		frame.FrameBody.RawBytes = data[24:]
+		//frame.FCS = method.Uint32(data[len(data)-4:])
 	}
 	frame.decodeFrameBody()
 
@@ -179,7 +182,7 @@ func (frame *Frame) decodeFrameControl() {
 	subtype = subtype | uint8(((frame.rawFrameControl>>8)&0x01)<<4)
 
 	if value, ok := subtypeMap[ftype][subtype]; !ok {
-		frame.FrameControl.Subtype = FrameSubTypeReserved
+		frame.FrameControl.Subtype = fmt.Sprintf("%s (%d:%d)", FrameSubTypeReserved, ftype, subtype)
 	} else {
 		frame.FrameControl.Subtype = value
 	}
@@ -199,10 +202,17 @@ func (frame *Frame) decodeFrameBody() {
 	}
 
 	switch frame.FrameControl.Subtype {
-	case FrameSubTypeBeacon:
-		if len(frame.FrameBody.RawBytes) >= 8 {
+	case FrameSubTypeBeacon, FrameSubTypeProbeResponse:
+		if len(frame.FrameBody.RawBytes) >= 12 {
 			frame.FrameBody.Timestamp = binary.LittleEndian.Uint64(frame.FrameBody.RawBytes[:8])
+			frame.FrameBody.BeaconInterval = binary.LittleEndian.Uint16(frame.FrameBody.RawBytes[8:10])
+			frame.FrameBody.CapabilitiesInformation = binary.LittleEndian.Uint16(frame.FrameBody.RawBytes[10:12])
+			if len(frame.FrameBody.RawBytes) > 12 {
+				frame.FrameBody.Tags = decodeTags(frame.FrameBody.RawBytes[12:])
+			}
 		}
+	case FrameSubTypeProbeRequest:
+		frame.FrameBody.Tags = decodeTags(frame.FrameBody.RawBytes)
 	}
 
 }
