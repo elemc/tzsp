@@ -95,7 +95,9 @@ var (
 type FrameControl struct {
 	ProtocolVersion uint8
 	Type            string
+	TypeInt         uint8
 	Subtype         string
+	SubtypeInt      uint8
 	ToDS            bool
 	FromDS          bool
 	MoreFlag        bool
@@ -174,6 +176,7 @@ func (frame *Frame) decodeFrameControl() {
 	ftype = ftype | uint8(((frame.rawFrameControl>>3)&0x01)<<1)
 	ftype = ftype | uint8(((frame.rawFrameControl>>4)&0x01)<<2)
 	frame.FrameControl.Type = typeMap[ftype]
+	frame.FrameControl.TypeInt = ftype
 
 	var subtype uint8
 	subtype = subtype | uint8(((frame.rawFrameControl>>5)&0x01)<<1)
@@ -186,6 +189,7 @@ func (frame *Frame) decodeFrameControl() {
 	} else {
 		frame.FrameControl.Subtype = value
 	}
+	frame.FrameControl.SubtypeInt = subtype
 
 	frame.FrameControl.ToDS = (frame.rawFrameControl>>9)&0x01 == 1
 	frame.FrameControl.FromDS = (frame.rawFrameControl>>10)&0x01 == 1
