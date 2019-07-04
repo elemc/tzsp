@@ -54,7 +54,7 @@ const (
 	FrameSubTypeQosDataCFAckPoll   = "qos data + CF-Ack + CF-Poll"
 	FrameSubTypeQosNoData          = "qos no data (null function)"
 	FrameSubTypeQosNoDataCFPoll    = "qos no data + CF-Poll"
-	FrameSubTypeQosNoDataCFAckPoll = "no data + CF-Ack + CF-Poll"
+	FrameSubTypeQosNoDataCFAckPoll = "qos no data + CF-Ack + CF-Poll"
 )
 
 var (
