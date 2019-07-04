@@ -47,6 +47,14 @@ const (
 	FrameSubTypeNoDataCFAck     = "no data + CF-Ack"
 	FrameSubTypeNoDataCFPoll    = "no data + CF-Poll"
 	FrameSubTypeNoDataCFAckPoll = "no data + CF-Ack + CF-Poll"
+
+	FrameSubTypeQosData            = "qos data"
+	FrameSubTypeQosDataCFAck       = "qos data + CF-Ack"
+	FrameSubTypeQosDataCFPoll      = "qos data + CF-Poll"
+	FrameSubTypeQosDataCFAckPoll   = "qos data + CF-Ack + CF-Poll"
+	FrameSubTypeQosNoData          = "qos no data (null function)"
+	FrameSubTypeQosNoDataCFPoll    = "qos no data + CF-Poll"
+	FrameSubTypeQosNoDataCFAckPoll = "no data + CF-Ack + CF-Poll"
 )
 
 var (
@@ -87,6 +95,14 @@ var (
 			5: FrameSubTypeNoDataCFAck,
 			6: FrameSubTypeNoDataCFPoll,
 			7: FrameSubTypeNoDataCFAckPoll,
+
+			8:  FrameSubTypeQosData,
+			9:  FrameSubTypeQosDataCFAck,
+			10: FrameSubTypeQosDataCFPoll,
+			11: FrameSubTypeQosDataCFAckPoll,
+			12: FrameSubTypeQosNoData,
+			13: FrameSubTypeQosNoDataCFPoll,
+			14: FrameSubTypeQosNoDataCFAckPoll,
 		},
 	}
 )
