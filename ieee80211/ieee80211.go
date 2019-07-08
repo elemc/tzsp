@@ -185,20 +185,20 @@ func Decode(data []byte) (frame Frame, err error) {
 }
 
 func (frame *Frame) decodeFrameControl() {
+	frame.FrameControl.ProtocolVersion = frame.FrameControl.ProtocolVersion | uint8(((frame.rawFrameControl>>0)&0x01)<<0)
 	frame.FrameControl.ProtocolVersion = frame.FrameControl.ProtocolVersion | uint8(((frame.rawFrameControl>>1)&0x01)<<1)
-	frame.FrameControl.ProtocolVersion = frame.FrameControl.ProtocolVersion | uint8(((frame.rawFrameControl>>2)&0x01)<<2)
 
 	var ftype uint8
+	ftype = ftype | uint8(((frame.rawFrameControl>>2)&0x01)<<0)
 	ftype = ftype | uint8(((frame.rawFrameControl>>3)&0x01)<<1)
-	ftype = ftype | uint8(((frame.rawFrameControl>>4)&0x01)<<2)
 	frame.FrameControl.Type = typeMap[ftype]
 	frame.FrameControl.TypeInt = ftype
 
 	var subtype uint8
+	subtype = subtype | uint8(((frame.rawFrameControl>>4)&0x01)<<0)
 	subtype = subtype | uint8(((frame.rawFrameControl>>5)&0x01)<<1)
 	subtype = subtype | uint8(((frame.rawFrameControl>>6)&0x01)<<2)
 	subtype = subtype | uint8(((frame.rawFrameControl>>7)&0x01)<<3)
-	subtype = subtype | uint8(((frame.rawFrameControl>>8)&0x01)<<4)
 
 	if value, ok := subtypeMap[ftype][subtype]; !ok {
 		frame.FrameControl.Subtype = fmt.Sprintf("%s (%d:%d)", FrameSubTypeReserved, ftype, subtype)
@@ -207,13 +207,13 @@ func (frame *Frame) decodeFrameControl() {
 	}
 	frame.FrameControl.SubtypeInt = subtype
 
-	frame.FrameControl.ToDS = (frame.rawFrameControl>>9)&0x01 == 1
-	frame.FrameControl.FromDS = (frame.rawFrameControl>>10)&0x01 == 1
-	frame.FrameControl.MoreFlag = (frame.rawFrameControl>>11)&0x01 == 1
-	frame.FrameControl.Retry = (frame.rawFrameControl>>12)&0x01 == 1
-	frame.FrameControl.PowerManagement = (frame.rawFrameControl>>13)&0x01 == 1
-	frame.FrameControl.MoreData = (frame.rawFrameControl>>14)&0x01 == 1
-	frame.FrameControl.WEP = (frame.rawFrameControl>>15)&0x01 == 1
+	frame.FrameControl.ToDS = (frame.rawFrameControl>>8)&0x01 == 1
+	frame.FrameControl.FromDS = (frame.rawFrameControl>>9)&0x01 == 1
+	frame.FrameControl.MoreFlag = (frame.rawFrameControl>>10)&0x01 == 1
+	frame.FrameControl.Retry = (frame.rawFrameControl>>11)&0x01 == 1
+	frame.FrameControl.PowerManagement = (frame.rawFrameControl>>12)&0x01 == 1
+	frame.FrameControl.MoreData = (frame.rawFrameControl>>13)&0x01 == 1
+	frame.FrameControl.WEP = (frame.rawFrameControl>>14)&0x01 == 1
 }
 
 func (frame *Frame) decodeFrameBody() {
