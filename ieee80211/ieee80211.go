@@ -29,8 +29,11 @@ const (
 	FrameSubTypeDiassociation         = "diassociation"
 	FrameSubTypeAuthentication        = "authentication"
 	FrameSubTypeDeauthentication      = "deauthentication"
+	FrameSubTypeAction                = "action"
 
 	// Control
+	FrameSubTypeBAR      = "block Ack Request"
+	FrameSubTypeBAck     = "block Ack"
 	FrameSubTypePS       = "power save"
 	FrameSubTypeRTS      = "request to send"
 	FrameSubTypeCTS      = "clear to send"
@@ -77,8 +80,11 @@ var (
 			10: FrameSubTypeDiassociation,
 			11: FrameSubTypeAuthentication,
 			12: FrameSubTypeDeauthentication,
+			13: FrameSubTypeAction,
 		},
 		1: map[uint8]string{
+			8:  FrameSubTypeBAR,
+			9:  FrameSubTypeBAck,
 			10: FrameSubTypePS,
 			11: FrameSubTypeRTS,
 			12: FrameSubTypeCTS,
